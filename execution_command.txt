@@ -2,4 +2,4 @@
 $ ngrok http 8000
 
 // run server
-python manage.py runserver
+python app.py
