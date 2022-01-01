@@ -14,6 +14,7 @@ from linebot.models import (
 )
 from fsm import TocMachine
 from utils import send_text_message
+import cv2
 
 load_dotenv()
 
