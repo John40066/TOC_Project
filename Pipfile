@@ -15,4 +15,4 @@ opencv-python = "==4.5.1.48"
 dataclasses = "*"
 
 [requires]
-python_version = "3.6"
+python_version = "3.9"
