@@ -24,23 +24,21 @@ blank_grid = cv2.imread('./images/grid.png', cv2.IMREAD_GRAYSCALE)
 white = cv2.imread('./images/white.png', cv2.IMREAD_GRAYSCALE)
 black = cv2.imread('./images/black.png', cv2.IMREAD_GRAYSCALE)
 
-web_url = "https://toc-final.herokuapp.com"
+# web_url = "https://toc-final.herokuapp.com"
+web_url = "https://2710-218-164-32-143.ngrok.io"
 
 load_dotenv()
 
 channel_secret = os.getenv("LINE_CHANNEL_SECRET", None)
 channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", None)
-userID = os.getenv("USER_ID", None)
 
-if channel_secret is None:
-    print("Specify LINE_CHANNEL_SECRET as environment variable.")
-    sys.exit(1)
 if channel_access_token is None:
-    print("Specify LINE_CHANNEL_ACCESS_TOKEN as environment variable.")
+    print("Specify LINE_CHANNEL_ACCESS_TOKEN as environment variable. in fsm")
     sys.exit(1)
-if userID is None:
-    print("Specify USER_ID as environment variable.")
+if channel_secret is None:
+    print("Specify LINE_CHANNEL_SECRET as environment variable. in fsm")
     sys.exit(1)
+
 
 line_bot_api = LineBotApi(channel_access_token)
 parser = WebhookParser(channel_secret)
@@ -94,25 +92,6 @@ def clean_grid():
                 grid[i][j] = 2
 
 
-def int2Full(num):
-    if(num == 0):
-        return "０"
-    if(num == 1):
-        return "１"
-    if(num == 2):
-        return "２"
-    if(num == 3):
-        return "３"
-    if(num == 4):
-        return "４"
-    if(num == 5):
-        return "５"
-    if(num == 6):
-        return "６"
-    if(num == 7):
-        return "７"
-
-
 def add_pic(result, chess_type, x, y):
     m, n = chess_type.shape
     for i in range(m):
@@ -134,21 +113,6 @@ def Grid_Image(Result_count):
                 result = add_pic(result, black, x, y)
     cv2.imwrite("./images/result" + str(Result_count) + ".png", result)
     return Result_count
-
-
-def grid_str():
-    s = "＋０１２３４５\n"
-    for i in range(6):
-        s += int2Full(i)
-        for j in range(6):
-            if grid[i][j] == 0:
-                s += "　"
-            elif grid[i][j] == 1:
-                s += "Ｏ"
-            elif grid[i][j] == 2:
-                s += "Ｘ"
-        s += "\n"
-    return s
 
 
 def CPU_decision():
@@ -286,7 +250,7 @@ class TocMachine(GraphMachine):
         clean_grid()
         for i in range(self.precount, self.Result_count):
             os.remove("./images/result" + str(i+1) + ".png")
-        self.precount = self.Result_count+1
+        self.precount = self.Result_count
         buttons_template_message = TemplateSendMessage(
             alt_text='Buttons template',
             template=ButtonsTemplate(
@@ -308,6 +272,7 @@ class TocMachine(GraphMachine):
                 ]
             )
         )
+        userID = event.source.user_id
         line_bot_api.push_message(userID, buttons_template_message)
 
     def on_enter_Rule(self, event):
@@ -334,6 +299,7 @@ class TocMachine(GraphMachine):
     def is_going_to_P2turn(self, event):
         text = event.message.text
         slist = text.split(' ')
+        userID = event.source.user_id
         try:
             x = int(slist[0])
             y = int(slist[1])
@@ -355,6 +321,7 @@ class TocMachine(GraphMachine):
     def is_going_to_P1turn(self, event):
         text = event.message.text
         slist = text.split(' ')
+        userID = event.source.user_id
         try:
             x = int(slist[0])
             y = int(slist[1])
@@ -376,6 +343,7 @@ class TocMachine(GraphMachine):
     def is_going_to_CPUturn(self, event):
         text = event.message.text
         slist = text.split(' ')
+        userID = event.source.user_id
         try:
             x = int(slist[0])
             y = int(slist[1])
@@ -396,6 +364,7 @@ class TocMachine(GraphMachine):
 
     def on_enter_P1_play_C(self, event):
         status = judge_endgame()
+        userID = event.source.user_id
         if(status == None):
             self.Result_count = Grid_Image(self.Result_count)
             line_bot_api.push_message(
@@ -417,6 +386,7 @@ class TocMachine(GraphMachine):
 
     def on_enter_P2_play(self, event):
         status = judge_endgame()
+        userID = event.source.user_id
         if(status == None):
             self.Result_count = Grid_Image(self.Result_count)
             line_bot_api.push_message(userID, TextSendMessage(text="P2 Turn."))
@@ -436,6 +406,7 @@ class TocMachine(GraphMachine):
             self.go_back(event)
 
     def on_enter_P1_play(self, event):
+        userID = event.source.user_id
         status = judge_endgame()
         if(status == None):
             self.Result_count = Grid_Image(self.Result_count)
@@ -458,6 +429,7 @@ class TocMachine(GraphMachine):
 
     def on_enter_CPU_play(self, event):
         status = judge_endgame()
+        userID = event.source.user_id
         if(status == None):
             x, y = CPU_decision()
             line_bot_api.push_message(userID, TextSendMessage(
