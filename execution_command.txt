@@ -1,5 +1,5 @@
 // execute ngrok on port 8000
-$ ngrok http 8000
+$ .\ngrok http 8000
 
 // run server
 python app.py

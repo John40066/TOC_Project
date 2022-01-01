@@ -19,28 +19,37 @@ load_dotenv()
 
 
 machine = TocMachine(
-    states=["user", "state1", "state2"],
+    states=["menu", "Rank", "P1_play", "P2_play",
+            "P1_play_C", "CPU_play"],
     transitions=[
-        {
-            "trigger": "advance",
-            "source": "user",
-            "dest": "state1",
-            "conditions": "is_going_to_state1",
-        },
-        {
-            "trigger": "advance",
-            "source": "user",
-            "dest": "state2",
-            "conditions": "is_going_to_state2",
-        },
-        {"trigger": "go_back", "source": ["state1", "state2"], "dest": "user"},
+        {"trigger": "advance", "source": "menu",
+            "dest": "Rank", "conditions": "is_going_to_Rank"},  # Rank
+        {"trigger": "advance", "source": "menu",
+            "dest": "P1_play", "conditions": "is_going_to_2P"},  # 2 Player
+        {"trigger": "advance", "source": "menu",
+            "dest": "P1_play_C", "conditions": "is_going_to_CPU"},  # 1 Player
+        {"trigger": "advance", "source": "P1_play",
+            "dest": "P2_play", "conditions": "is_going_to_P2turn"},  # 1P to 2P
+        {"trigger": "advance", "source": "P2_play",
+            "dest": "P1_play", "conditions": "is_going_to_P1turn"},  # 2P to 1P
+        {"trigger": "advance", "source": "P1_play_C",
+            "dest": "CPU_play", "conditions": "is_going_to_CPUturn"},  # 1P to CPU
+        {"trigger": "go_back", "source": "CPU_play",
+            "dest": "P1_play_C"},  # CPU to 1P
+        {"trigger": "advance", "source": [
+            "P1_play", "P2_play", "P1_play_C", "Rank"], "dest": "menu", "conditions": "is_going_to_menu"},  # Go Back Menu
+        {"trigger": "go_back", "source": "Rank", "dest": "menu"},  # Go Back Menu
+
+        # {"trigger": "go_back", "source": "P1_w", "dest": "P1_play"},
+        # {"trigger": "go_back", "source": "P2_w", "dest": "P2_play"},
+        # {"trigger": "go_back", "source": "P1_w_c", "dest": "P1_play_C"},
     ],
-    initial="user",
+    initial="menu",
     auto_transitions=False,
     show_conditions=True,
 )
 
-app = Flask(__name__, static_url_path="")
+app = Flask(__name__, static_url_path="/images", static_folder="./images/")
 
 
 # get channel_secret and channel_access_token from your environment variable
@@ -64,7 +73,6 @@ def callback():
     # get request body as text
     body = request.get_data(as_text=True)
     app.logger.info("Request body: " + body)
-
     # parse webhook body
     try:
         events = parser.parse(body, signature)
@@ -76,12 +84,10 @@ def callback():
             continue
         if not isinstance(event.message, TextMessage):
             continue
-
         line_bot_api.reply_message(
             event.reply_token, TextSendMessage(
                 text=event.message.text)
         )
-
     return "OK"
 
 
@@ -110,7 +116,7 @@ def webhook_handler():
         print(f"REQUEST BODY: \n{body}")
         response = machine.advance(event)
         if response == False:
-            send_text_message(event.reply_token, "Not Entering any State")
+            send_text_message(event.reply_token, "Invalid Command.")
 
     return "OK"
 
