@@ -24,6 +24,8 @@ blank_grid = cv2.imread('./images/grid.png', cv2.IMREAD_GRAYSCALE)
 white = cv2.imread('./images/white.png', cv2.IMREAD_GRAYSCALE)
 black = cv2.imread('./images/black.png', cv2.IMREAD_GRAYSCALE)
 
+web_url = "https://4eba-223-139-137-56.ngrok.io"
+
 load_dotenv()
 
 channel_secret = os.getenv("LINE_CHANNEL_SECRET", None)
@@ -57,16 +59,6 @@ grid = [
     [0, 0, 0, 0, 0, 0]]
 
 
-def clean_grid():
-    grid = [
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 1, 2, 0, 0],
-        [0, 0, 2, 1, 0, 0],
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0]]
-
-
 def judge_endgame():
     Blank_count = 0
     P1_count = 0
@@ -86,6 +78,20 @@ def judge_endgame():
     elif P2_count == 0:
         return False
     return None
+
+
+def clean_grid():
+    for i in range(6):
+        for j in range(6):
+            grid[i][j] = 0
+            if i == 2 and j == 2:
+                grid[i][j] = 1
+            elif i == 3 and j == 3:
+                grid[i][j] = 1
+            elif i == 2 and j == 3:
+                grid[i][j] = 2
+            elif i == 3 and j == 2:
+                grid[i][j] = 2
 
 
 def int2Full(num):
@@ -115,7 +121,8 @@ def add_pic(result, chess_type, x, y):
     return result
 
 
-def Grid_Image():
+def Grid_Image(Result_count):
+    Result_count += 1
     result = blank_grid.copy()
     for i in range(6):
         for j in range(6):
@@ -125,7 +132,8 @@ def Grid_Image():
                 result = add_pic(result, white, x, y)
             elif grid[i][j] == 2:
                 result = add_pic(result, black, x, y)
-    cv2.imwrite('./images/result.png', result)
+    cv2.imwrite("./images/result" + str(Result_count) + ".png", result)
+    return Result_count
 
 
 def grid_str():
@@ -163,7 +171,7 @@ def place(x, y, player):
         grid[x][y] = player
         can = False
         p = x+1
-        while p < 5:
+        while p <= 5:
             if grid[p][y] == player and p != x+1:
                 can = True
                 p -= 1
@@ -187,7 +195,7 @@ def place(x, y, player):
                 break
             p -= 1
         p = y+1
-        while p < 5:
+        while p <= 5:
             if grid[x][p] == player and p != y+1:
                 can = True
                 p -= 1
@@ -211,7 +219,7 @@ def place(x, y, player):
                 break
             p -= 1
         p, q = x+1, y+1
-        while p < 5 and q < 5:
+        while p <= 5 and q <= 5:
             if grid[p][q] == player and p != x+1:
                 can = True
                 p, q = p-1, q-1
@@ -223,7 +231,7 @@ def place(x, y, player):
                 break
             p, q = p+1, q+1
         p, q = x+1, y-1
-        while p < 5 and q >= 0:
+        while p <= 5 and q >= 0:
             if grid[p][q] == player and p != x+1:
                 can = True
                 p, q = p-1, q+1
@@ -247,7 +255,7 @@ def place(x, y, player):
                 break
             p, q = p-1, q-1
         p, q = x-1, y+1
-        while p >= 0 and q < 5:
+        while p >= 0 and q <= 5:
             if grid[p][q] == player and p != x-1:
                 can = True
                 p, q = p+1, q-1
@@ -266,6 +274,8 @@ def place(x, y, player):
 
 class TocMachine(GraphMachine):
     def __init__(self, **machine_configs):
+        self.Result_count = 0
+        self.precount = 0
         self.machine = GraphMachine(model=self, **machine_configs)
 
     def is_going_to_Rule(self, event):
@@ -274,6 +284,9 @@ class TocMachine(GraphMachine):
 
     def on_enter_menu(self, event):
         clean_grid()
+        for i in range(self.precount, self.Result_count):
+            os.remove("./images/result" + str(i+1) + ".png")
+        self.precount = self.Result_count+1
         buttons_template_message = TemplateSendMessage(
             alt_text='Buttons template',
             template=ButtonsTemplate(
@@ -316,7 +329,7 @@ class TocMachine(GraphMachine):
 
     def is_going_to_menu(self, event):
         text = event.message.text
-        return text.lower() == "back"
+        return text.lower() == "menu"
 
     def is_going_to_P2turn(self, event):
         text = event.message.text
@@ -384,10 +397,11 @@ class TocMachine(GraphMachine):
     def on_enter_P1_play_C(self, event):
         status = judge_endgame()
         if(status == None):
-            Grid_Image()
+            self.Result_count = Grid_Image(self.Result_count)
             line_bot_api.push_message(
                 userID, TextSendMessage(text="Your Turn."))
-            img_url = 'https://8816-218-164-32-143.ngrok.io/images/result.png'
+            img_url = web_url + "/images/result" + \
+                str(self.Result_count) + ".png"
             image_message = ImageSendMessage(
                 original_content_url=img_url, preview_image_url=img_url)
             line_bot_api.push_message(userID, image_message)
@@ -404,9 +418,10 @@ class TocMachine(GraphMachine):
     def on_enter_P2_play(self, event):
         status = judge_endgame()
         if(status == None):
-            Grid_Image()
+            self.Result_count = Grid_Image(self.Result_count)
             line_bot_api.push_message(userID, TextSendMessage(text="P2 Turn."))
-            img_url = 'https://8816-218-164-32-143.ngrok.io/images/result.png'
+            img_url = web_url + "/images/result" + \
+                str(self.Result_count) + ".png"
             image_message = ImageSendMessage(
                 original_content_url=img_url, preview_image_url=img_url)
             line_bot_api.push_message(userID, image_message)
@@ -423,10 +438,11 @@ class TocMachine(GraphMachine):
     def on_enter_P1_play(self, event):
         status = judge_endgame()
         if(status == None):
-            Grid_Image()
+            self.Result_count = Grid_Image(self.Result_count)
             line_bot_api.push_message(
                 userID, TextSendMessage(text="P1 Turn."))
-            img_url = 'https://8816-218-164-32-143.ngrok.io/images/result.png'
+            img_url = web_url + "/images/result" + \
+                str(self.Result_count) + ".png"
             image_message = ImageSendMessage(
                 original_content_url=img_url, preview_image_url=img_url)
             line_bot_api.push_message(userID, image_message)

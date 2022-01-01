@@ -37,10 +37,9 @@ machine = TocMachine(
         {"trigger": "go_back", "source": "CPU_play",
             "dest": "P1_play_C"},  # CPU to 1P
         {"trigger": "advance", "source": [
-            "P1_play", "P2_play", "P1_play_C", "Rule"], "dest": "menu", "conditions": "is_going_to_menu"},  # Go Back Menu
+            "P1_play", "P2_play", "P1_play_C"], "dest": "menu", "conditions": "is_going_to_menu"},  # Go Back Menu
         {"trigger": "go_back", "source": [
             "P1_play", "P2_play", "P1_play_C", "Rule"], "dest": "menu"},  # Game End and Go Back Menu
-        {"trigger": "go_back", "source": "Rule", "dest": "menu"},  # Go Back Menu
     ],
     initial="menu",
     auto_transitions=False,
@@ -87,8 +86,8 @@ def webhook_handler():
             continue
         if not isinstance(event.message.text, str):
             continue
-        # print(f"\nFSM STATE: {machine.state}")
-        # print(f"REQUEST BODY: \n{body}")
+        print(f"\nFSM STATE: {machine.state}")
+        print(f"REQUEST BODY: \n{body}")
         response = machine.advance(event)
         if response == False:
             send_text_message(event.reply_token, "Invalid Command.")
