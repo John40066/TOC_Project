@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "212ea166ee9143ffbe80d09637ac9926635ec6cf8121d93e246f6465b5b3df6a"
+            "sha256": "db83ffc9485ed5e115d3efab921f247f6f86a2628fcfb136f86f90094c8b2753"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -61,6 +61,14 @@
             ],
             "markers": "python_version >= '2.6' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==0.18.2"
+        },
+        "graphviz": {
+            "hashes": [
+                "sha256:09ed0cde452d015fe77c4845a210eb642f28d245f5bc250d4b97808cb8f49078",
+                "sha256:f34088c08be2ec16279dfa9c3b4ff3d1453c5c67597a33e2819b000e18d4c546"
+            ],
+            "index": "pypi",
+            "version": "==0.19.1"
         },
         "idna": {
             "hashes": [
