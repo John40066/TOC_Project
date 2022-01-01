@@ -1,8 +1,4 @@
 graphviz
 libgraphviz-dev
 pkg-config
-libpng-dev
-libjpeg-dev
-libopenexr-dev
-libtiff-dev
-libwebp-dev
+python-opencv
