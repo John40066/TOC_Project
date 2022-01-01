@@ -24,7 +24,7 @@ blank_grid = cv2.imread('./images/grid.png', cv2.IMREAD_GRAYSCALE)
 white = cv2.imread('./images/white.png', cv2.IMREAD_GRAYSCALE)
 black = cv2.imread('./images/black.png', cv2.IMREAD_GRAYSCALE)
 
-web_url = "https://4eba-223-139-137-56.ngrok.io"
+web_url = "https://toc-final.herokuapp.com/"
 
 load_dotenv()
 
