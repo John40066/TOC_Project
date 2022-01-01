@@ -1,4 +1,5 @@
-from transitions.extensions import GraphMachine
+#from transitions.extensions import GraphMachine
+from transitions import Machine
 import os
 import sys
 import random
@@ -236,11 +237,11 @@ def place(x, y, player):
     return False
 
 
-class TocMachine(GraphMachine):
+class TocMachine(Machine):
     def __init__(self, **machine_configs):
         self.Result_count = 0
         self.precount = 0
-        self.machine = GraphMachine(model=self, **machine_configs)
+        self.machine = Machine(model=self, **machine_configs)
 
     def is_going_to_Rule(self, event):
         text = event.message.text

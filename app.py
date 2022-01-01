@@ -44,7 +44,7 @@ machine = TocMachine(
     ],
     initial="menu",
     auto_transitions=False,
-    show_conditions=True,
+    # show_conditions=True
 )
 
 app = Flask(__name__, static_url_path="/images", static_folder="./images/")
