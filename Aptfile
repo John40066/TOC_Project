@@ -1,7 +1,6 @@
 graphviz
 libgraphviz-dev
 pkg-config
-pygraphviz
 libsm6
 libxrender1
 libfontconfig1

@@ -1,4 +1,5 @@
 from transitions.extensions import GraphMachine
+import pygraphviz
 import os
 import sys
 import random
