@@ -19,11 +19,11 @@ load_dotenv()
 
 
 machine = TocMachine(
-    states=["menu", "Rank", "P1_play", "P2_play",
+    states=["menu", "Rule", "P1_play", "P2_play",
             "P1_play_C", "CPU_play"],
     transitions=[
         {"trigger": "advance", "source": "menu",
-            "dest": "Rank", "conditions": "is_going_to_Rank"},  # Rank
+            "dest": "Rule", "conditions": "is_going_to_Rule"},  # Rule
         {"trigger": "advance", "source": "menu",
             "dest": "P1_play", "conditions": "is_going_to_2P"},  # 2 Player
         {"trigger": "advance", "source": "menu",
@@ -37,12 +37,10 @@ machine = TocMachine(
         {"trigger": "go_back", "source": "CPU_play",
             "dest": "P1_play_C"},  # CPU to 1P
         {"trigger": "advance", "source": [
-            "P1_play", "P2_play", "P1_play_C", "Rank"], "dest": "menu", "conditions": "is_going_to_menu"},  # Go Back Menu
-        {"trigger": "go_back", "source": "Rank", "dest": "menu"},  # Go Back Menu
-
-        # {"trigger": "go_back", "source": "P1_w", "dest": "P1_play"},
-        # {"trigger": "go_back", "source": "P2_w", "dest": "P2_play"},
-        # {"trigger": "go_back", "source": "P1_w_c", "dest": "P1_play_C"},
+            "P1_play", "P2_play", "P1_play_C", "Rule"], "dest": "menu", "conditions": "is_going_to_menu"},  # Go Back Menu
+        {"trigger": "go_back", "source": [
+            "P1_play", "P2_play", "P1_play_C", "Rule"], "dest": "menu"},  # Game End and Go Back Menu
+        {"trigger": "go_back", "source": "Rule", "dest": "menu"},  # Go Back Menu
     ],
     initial="menu",
     auto_transitions=False,
@@ -56,6 +54,7 @@ app = Flask(__name__, static_url_path="/images", static_folder="./images/")
 channel_secret = os.getenv("LINE_CHANNEL_SECRET", None)
 channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", None)
 
+
 if channel_secret is None:
     print("Specify LINE_CHANNEL_SECRET as environment variable.")
     sys.exit(1)
@@ -65,30 +64,6 @@ if channel_access_token is None:
 
 line_bot_api = LineBotApi(channel_access_token)
 parser = WebhookParser(channel_secret)
-
-
-@app.route("/callback", methods=["POST"])
-def callback():
-    signature = request.headers["X-Line-Signature"]
-    # get request body as text
-    body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
-    # parse webhook body
-    try:
-        events = parser.parse(body, signature)
-    except InvalidSignatureError:
-        abort(400)
-    # if event is MessageEvent and message is TextMessage, then echo text
-    for event in events:
-        if not isinstance(event, MessageEvent):
-            continue
-        if not isinstance(event.message, TextMessage):
-            continue
-        line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(
-                text=event.message.text)
-        )
-    return "OK"
 
 
 @app.route("/webhook", methods=["POST"])
@@ -112,8 +87,8 @@ def webhook_handler():
             continue
         if not isinstance(event.message.text, str):
             continue
-        print(f"\nFSM STATE: {machine.state}")
-        print(f"REQUEST BODY: \n{body}")
+        # print(f"\nFSM STATE: {machine.state}")
+        # print(f"REQUEST BODY: \n{body}")
         response = machine.advance(event)
         if response == False:
             send_text_message(event.reply_token, "Invalid Command.")
