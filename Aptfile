@@ -1,4 +1,4 @@
 graphviz
 libgraphviz-dev
 pkg-config
-python3-opencv
+opencv-python
