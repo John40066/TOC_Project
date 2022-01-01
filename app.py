@@ -14,28 +14,9 @@ from linebot.models import (
 )
 from fsm import TocMachine
 from utils import send_text_message
-import cv2
 
 load_dotenv()
 
-
-app = Flask(__name__, static_url_path="/images", static_folder="./images/")
-
-
-# get channel_secret and channel_access_token from your environment variable
-channel_secret = os.getenv("LINE_CHANNEL_SECRET", None)
-channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", None)
-
-if channel_access_token is None:
-    print("Specify LINE_CHANNEL_ACCESS_TOKEN as environment variable.")
-    sys.exit(1)
-if channel_secret is None:
-    print("Specify LINE_CHANNEL_SECRET as environment variable.")
-    sys.exit(1)
-
-
-line_bot_api = LineBotApi(channel_access_token)
-parser = WebhookParser(channel_secret)
 
 machine = TocMachine(
     states=["menu", "Rule", "P1_play", "P2_play",
@@ -56,16 +37,33 @@ machine = TocMachine(
         {"trigger": "go_back", "source": "CPU_play",
             "dest": "P1_play_C"},  # CPU to 1P
         {"trigger": "advance", "source": [
-            "P1_play", "P2_play", "P1_play_C"], "dest": "menu", "conditions": "is_going_to_menu"},  # Go Back Menu
+            "P1_play", "P2_play", "P1_play_C", "Rule"], "dest": "menu", "conditions": "is_going_to_menu"},  # Go Back Menu
         {"trigger": "go_back", "source": [
             "P1_play", "P2_play", "P1_play_C", "Rule"], "dest": "menu"},  # Game End and Go Back Menu
+        {"trigger": "go_back", "source": "Rule", "dest": "menu"},  # Go Back Menu
     ],
-    channel_access_token=channel_access_token,
-    channel_secret=channel_secret,
     initial="menu",
     auto_transitions=False,
     show_conditions=True,
 )
+
+app = Flask(__name__, static_url_path="/images", static_folder="./images/")
+
+
+# get channel_secret and channel_access_token from your environment variable
+channel_secret = os.getenv("LINE_CHANNEL_SECRET", None)
+channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", None)
+
+
+if channel_secret is None:
+    print("Specify LINE_CHANNEL_SECRET as environment variable.")
+    sys.exit(1)
+if channel_access_token is None:
+    print("Specify LINE_CHANNEL_ACCESS_TOKEN as environment variable.")
+    sys.exit(1)
+
+line_bot_api = LineBotApi(channel_access_token)
+parser = WebhookParser(channel_secret)
 
 
 @app.route("/webhook", methods=["POST"])
@@ -98,10 +96,10 @@ def webhook_handler():
     return "OK"
 
 
-# @app.route("/show-fsm", methods=["GET"])
-# def show_fsm():
-#     machine.get_graph().draw("fsm.png", prog="dot", format="png")
-#     return send_file("fsm.png", mimetype="image/png")
+@app.route("/show-fsm", methods=["GET"])
+def show_fsm():
+    machine.get_graph().draw("fsm.png", prog="dot", format="png")
+    return send_file("fsm.png", mimetype="image/png")
 
 
 if __name__ == "__main__":

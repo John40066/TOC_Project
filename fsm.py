@@ -20,19 +20,6 @@ from utils import send_text_message
 import cv2
 import numpy as np
 
-
-# load_dotenv()
-
-# channel_secret = os.getenv("LINE_CHANNEL_SECRET", None)
-# channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", None)
-
-# if channel_access_token is None:
-#     print("Specify LINE_CHANNEL_ACCESS_TOKEN as environment variable. in fsm")
-#     sys.exit(1)
-# if channel_secret is None:
-#     print("Specify LINE_CHANNEL_SECRET as environment variable. in fsm")
-#     sys.exit(1)
-
 blank_grid = cv2.imread('./images/grid.png', cv2.IMREAD_GRAYSCALE)
 white = cv2.imread('./images/white.png', cv2.IMREAD_GRAYSCALE)
 black = cv2.imread('./images/black.png', cv2.IMREAD_GRAYSCALE)
@@ -40,8 +27,21 @@ black = cv2.imread('./images/black.png', cv2.IMREAD_GRAYSCALE)
 web_url = "https://toc-final.herokuapp.com"
 # web_url = "https://2710-218-164-32-143.ngrok.io"
 
-# line_bot_api = LineBotApi(channel_access_token)
-# parser = WebhookParser(channel_secret)
+load_dotenv()
+
+channel_secret = os.getenv("LINE_CHANNEL_SECRET", None)
+channel_access_token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", None)
+
+if channel_access_token is None:
+    print("Specify LINE_CHANNEL_ACCESS_TOKEN as environment variable.")
+    sys.exit(1)
+if channel_secret is None:
+    print("Specify LINE_CHANNEL_SECRET as environment variable.")
+    sys.exit(1)
+
+
+line_bot_api = LineBotApi(channel_access_token)
+parser = WebhookParser(channel_secret)
 
 H_Prio = [(0, 0), (0, 5), (5, 0), (5, 5)]
 M_Prio = [(0, 2), (0, 3), (1, 2), (1, 3), (2, 0), (2, 1), (2, 4), (2, 5),
@@ -237,12 +237,10 @@ def place(x, y, player):
 
 
 class TocMachine(GraphMachine):
-    def __init__(self, channel_access_token, channel_secret, **machine_configs):
+    def __init__(self, **machine_configs):
         self.Result_count = 0
         self.precount = 0
         self.machine = GraphMachine(model=self, **machine_configs)
-        self.line_bot_api = LineBotApi(channel_access_token)
-        self.parser = WebhookParser(channel_secret)
 
     def is_going_to_Rule(self, event):
         text = event.message.text
@@ -275,7 +273,7 @@ class TocMachine(GraphMachine):
             )
         )
         userID = event.source.user_id
-        self.line_bot_api.push_message(userID, buttons_template_message)
+        line_bot_api.push_message(userID, buttons_template_message)
 
     def on_enter_Rule(self, event):
         send_text_message(
@@ -313,10 +311,10 @@ class TocMachine(GraphMachine):
                     event.reply_token, "Player 1 place at : (" + str(x) + ", " + str(y) + ")")
                 return True
             else:
-                self.line_bot_api.push_message(
+                line_bot_api.push_message(
                     userID, TextSendMessage(text="Can not place here!"))
         else:
-            self.line_bot_api.push_message(
+            line_bot_api.push_message(
                 userID, TextSendMessage(text="Out of board range!"))
         return False
 
@@ -335,10 +333,10 @@ class TocMachine(GraphMachine):
                     event.reply_token, "Player 2 place at : (" + str(x) + ", " + str(y) + ")")
                 return True
             else:
-                self.line_bot_api.push_message(
+                line_bot_api.push_message(
                     userID, TextSendMessage(text="Can not place here!"))
         else:
-            self.line_bot_api.push_message(
+            line_bot_api.push_message(
                 userID, TextSendMessage(text="Out of board range!"))
         return False
 
@@ -357,10 +355,10 @@ class TocMachine(GraphMachine):
                     event.reply_token, "You place at : (" + str(x) + ", " + str(y) + ")")
                 return True
             else:
-                self.line_bot_api.push_message(
+                line_bot_api.push_message(
                     userID, TextSendMessage(text="Can not place here!"))
         else:
-            self.line_bot_api.push_message(
+            line_bot_api.push_message(
                 userID, TextSendMessage(text="Out of board range!"))
         return False
 
@@ -369,20 +367,20 @@ class TocMachine(GraphMachine):
         userID = event.source.user_id
         if(status == None):
             self.Result_count = Grid_Image(self.Result_count)
-            self.line_bot_api.push_message(
+            line_bot_api.push_message(
                 userID, TextSendMessage(text="Your Turn."))
             img_url = web_url + "/images/result" + \
                 str(self.Result_count) + ".png"
             image_message = ImageSendMessage(
                 original_content_url=img_url, preview_image_url=img_url)
-            self.line_bot_api.push_message(userID, image_message)
+            line_bot_api.push_message(userID, image_message)
             print(grid_str())
         elif(status):
-            self.line_bot_api.push_message(
+            line_bot_api.push_message(
                 userID, TextSendMessage(text="CPU Win ! Game End"))
             self.go_back(event)
         else:
-            self.line_bot_api.push_message(
+            line_bot_api.push_message(
                 userID, TextSendMessage(text="You Win ! Game End"))
             self.go_back(event)
 
@@ -391,20 +389,19 @@ class TocMachine(GraphMachine):
         userID = event.source.user_id
         if(status == None):
             self.Result_count = Grid_Image(self.Result_count)
-            self.line_bot_api.push_message(
-                userID, TextSendMessage(text="P2 Turn."))
+            line_bot_api.push_message(userID, TextSendMessage(text="P2 Turn."))
             img_url = web_url + "/images/result" + \
                 str(self.Result_count) + ".png"
             image_message = ImageSendMessage(
                 original_content_url=img_url, preview_image_url=img_url)
-            self.line_bot_api.push_message(userID, image_message)
+            line_bot_api.push_message(userID, image_message)
             print(grid_str())
         elif(status):
-            self.line_bot_api.push_message(
+            line_bot_api.push_message(
                 userID, TextSendMessage(text="Player 2 Win ! Game End"))
             self.go_back(event)
         else:
-            self.line_bot_api.push_message(
+            line_bot_api.push_message(
                 userID, TextSendMessage(text="Player 1 Win ! Game End"))
             self.go_back(event)
 
@@ -413,20 +410,20 @@ class TocMachine(GraphMachine):
         status = judge_endgame()
         if(status == None):
             self.Result_count = Grid_Image(self.Result_count)
-            self.line_bot_api.push_message(
+            line_bot_api.push_message(
                 userID, TextSendMessage(text="P1 Turn."))
             img_url = web_url + "/images/result" + \
                 str(self.Result_count) + ".png"
             image_message = ImageSendMessage(
                 original_content_url=img_url, preview_image_url=img_url)
-            self.line_bot_api.push_message(userID, image_message)
+            line_bot_api.push_message(userID, image_message)
             print(grid_str())
         elif(status):
-            self.line_bot_api.push_message(
+            line_bot_api.push_message(
                 userID, TextSendMessage(text="Player 2 Win ! Game End"))
             self.go_back(event)
         else:
-            self.line_bot_api.push_message(
+            line_bot_api.push_message(
                 userID, TextSendMessage(text="Player 1 Win ! Game End"))
             self.go_back(event)
 
@@ -435,6 +432,6 @@ class TocMachine(GraphMachine):
         userID = event.source.user_id
         if(status == None):
             x, y = CPU_decision()
-            self.line_bot_api.push_message(userID, TextSendMessage(
+            line_bot_api.push_message(userID, TextSendMessage(
                 text="CPU Turn. CPU place at : (" + str(x) + ", " + str(y) + ")"))
         self.go_back(event)
