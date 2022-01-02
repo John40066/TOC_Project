@@ -26,7 +26,7 @@ white = cv2.imread('./images/white.png', cv2.IMREAD_GRAYSCALE)
 black = cv2.imread('./images/black.png', cv2.IMREAD_GRAYSCALE)
 
 web_url = "https://toc-final.herokuapp.com"
-# web_url = "https://2710-218-164-32-143.ngrok.io"
+# web_url = "https://355b-218-164-32-143.ngrok.io"
 
 load_dotenv()
 
@@ -49,16 +49,9 @@ M_Prio = [(0, 2), (0, 3), (1, 2), (1, 3), (2, 0), (2, 1), (2, 4), (2, 5),
           (3, 0), (3, 1), (3, 4), (3, 5), (4, 2), (4, 3), (5, 2), (5, 3)]
 L_Prio = [(0, 1), (1, 0), (1, 1), (0, 4), (1, 4), (1, 5),
           (5, 4), (4, 5), (4, 4), (4, 1), (4, 0), (5, 1)]
-grid = [
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 1, 2, 0, 0],
-    [0, 0, 2, 1, 0, 0],
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0]]
 
 
-def judge_endgame():
+def judge_endgame(grid):
     Blank_count = 0
     P1_count = 0
     P2_count = 0
@@ -80,28 +73,23 @@ def judge_endgame():
 
 
 def clean_grid():
-    for i in range(6):
-        for j in range(6):
-            grid[i][j] = 0
-            if i == 2 and j == 2:
-                grid[i][j] = 1
-            elif i == 3 and j == 3:
-                grid[i][j] = 1
-            elif i == 2 and j == 3:
-                grid[i][j] = 2
-            elif i == 3 and j == 2:
-                grid[i][j] = 2
+    return [[0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 2, 0, 0],
+            [0, 0, 2, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0]]
 
 
-def add_pic(result, chess_type, x, y):
+def add_pic(source, chess_type, x, y):
     m, n = chess_type.shape
     for i in range(m):
         for j in range(n):
-            result[x+i][y+j] = chess_type[i][j]
-    return result
+            source[x+i][y+j] = chess_type[i][j]
+    return source
 
 
-def Grid_Image(Result_count):
+def Grid_Image(grid, Result_count, user_id):
     Result_count += 1
     result = blank_grid.copy()
     for i in range(6):
@@ -112,32 +100,35 @@ def Grid_Image(Result_count):
                 result = add_pic(result, white, x, y)
             elif grid[i][j] == 2:
                 result = add_pic(result, black, x, y)
-    cv2.imwrite("./images/result" + str(Result_count) + ".png", result)
+    cv2.imwrite("./images/" + user_id + "result" +
+                str(Result_count) + ".png", result)
     return Result_count
 
 
-def CPU_decision():
+def CPU_decision(grid):
     for i in range(4):
-        if(place(H_Prio[i][0], H_Prio[i][1], 2)):
+        if(place(grid, H_Prio[i][0], H_Prio[i][1], 2)):
             return H_Prio[i][0], H_Prio[i][1]
     random.shuffle(M_Prio)
     for i in range(16):
-        if(place(M_Prio[i][0], M_Prio[i][1], 2)):
+        if(place(grid, M_Prio[i][0], M_Prio[i][1], 2)):
             return M_Prio[i][0], M_Prio[i][1]
     random.shuffle(L_Prio)
     for i in range(12):
-        if(place(L_Prio[i][0], L_Prio[i][1], 2)):
+        if(place(grid, L_Prio[i][0], L_Prio[i][1], 2)):
             return L_Prio[i][0], L_Prio[i][1]
     return
 
 
-def place(x, y, player):
+def place(grid, x, y, player):
     if(grid[x][y] == 0):
         grid[x][y] = player
         can = False
         p = x+1
         while p <= 5:
-            if grid[p][y] == player and p != x+1:
+            if grid[p][y] == player:
+                if p == x+1:
+                    break
                 can = True
                 p -= 1
                 while grid[p][y] != player:
@@ -149,7 +140,9 @@ def place(x, y, player):
             p += 1
         p = x-1
         while p >= 0:
-            if grid[p][y] == player and p != x-1:
+            if grid[p][y] == player:
+                if p == x-1:
+                    break
                 can = True
                 p += 1
                 while grid[p][y] != player:
@@ -161,7 +154,9 @@ def place(x, y, player):
             p -= 1
         p = y+1
         while p <= 5:
-            if grid[x][p] == player and p != y+1:
+            if grid[x][p] == player:
+                if p == y+1:
+                    break
                 can = True
                 p -= 1
                 while grid[x][p] != player:
@@ -173,7 +168,9 @@ def place(x, y, player):
             p += 1
         p = y-1
         while p >= 0:
-            if grid[x][p] == player and p != y-1:
+            if grid[x][p] == player:
+                if p == y-1:
+                    break
                 can = True
                 p += 1
                 while grid[x][p] != player:
@@ -185,7 +182,9 @@ def place(x, y, player):
             p -= 1
         p, q = x+1, y+1
         while p <= 5 and q <= 5:
-            if grid[p][q] == player and p != x+1:
+            if grid[p][q] == player:
+                if p == x+1:
+                    break
                 can = True
                 p, q = p-1, q-1
                 while grid[p][q] != player:
@@ -197,7 +196,9 @@ def place(x, y, player):
             p, q = p+1, q+1
         p, q = x+1, y-1
         while p <= 5 and q >= 0:
-            if grid[p][q] == player and p != x+1:
+            if grid[p][q] == player:
+                if p == x+1:
+                    break
                 can = True
                 p, q = p-1, q+1
                 while grid[p][q] != player:
@@ -209,7 +210,9 @@ def place(x, y, player):
             p, q = p+1, q-1
         p, q = x-1, y-1
         while p >= 0 and q >= 0:
-            if grid[p][q] == player and p != x-1:
+            if grid[p][q] == player:
+                if p == x-1:
+                    break
                 can = True
                 p, q = p+1, q+1
                 while grid[p][q] != player:
@@ -221,7 +224,9 @@ def place(x, y, player):
             p, q = p-1, q-1
         p, q = x-1, y+1
         while p >= 0 and q <= 5:
-            if grid[p][q] == player and p != x-1:
+            if grid[p][q] == player:
+                if p == x-1:
+                    break
                 can = True
                 p, q = p+1, q-1
                 while grid[p][q] != player:
@@ -238,7 +243,9 @@ def place(x, y, player):
 
 
 class TocMachine(Machine):
-    def __init__(self, **machine_configs):
+    def __init__(self, userid, **machine_configs):
+        self.grid = clean_grid()
+        self.userID = userid
         self.Result_count = 0
         self.precount = 0
         self.machine = Machine(model=self, **machine_configs)
@@ -248,9 +255,10 @@ class TocMachine(Machine):
         return text.lower() == "rule"
 
     def on_enter_menu(self, event):
-        clean_grid()
+        self.grid = clean_grid()
         for i in range(self.precount, self.Result_count):
-            os.remove("./images/result" + str(i+1) + ".png")
+            os.remove("./images/" + self.userID +
+                      "result" + str(i+1) + ".png")
         self.precount = self.Result_count
         buttons_template_message = TemplateSendMessage(
             alt_text='Buttons template',
@@ -273,12 +281,11 @@ class TocMachine(Machine):
                 ]
             )
         )
-        userID = event.source.user_id
-        line_bot_api.push_message(userID, buttons_template_message)
+        line_bot_api.push_message(self.userID, buttons_template_message)
 
     def on_enter_Rule(self, event):
         send_text_message(
-            event.reply_token, "Rule : \n1. Enter 2 number and split by a space.\n2. You can exist game at any time by typing 'Menu'.")
+            event.reply_token, "Rule : \n1. Enter 2 number and split by a space.\n2. You can exist game at any time by typing 'Menu'.\n3. P1 is White, P2 and CPU is Black")
         self.go_back(event)
 
     def is_going_to_2P(self, event):
@@ -300,128 +307,126 @@ class TocMachine(Machine):
     def is_going_to_P2turn(self, event):
         text = event.message.text
         slist = text.split(' ')
-        userID = event.source.user_id
         try:
             x = int(slist[0])
             y = int(slist[1])
         except:
             return False
         if (0 <= x and x <= 5 and 0 <= y and y <= 5):
-            if place(x, y, 1):
+            if place(self.grid, x, y, 1):
                 send_text_message(
                     event.reply_token, "Player 1 place at : (" + str(x) + ", " + str(y) + ")")
                 return True
             else:
                 line_bot_api.push_message(
-                    userID, TextSendMessage(text="Can not place here!"))
+                    self.userID, TextSendMessage(text="Can not place here!"))
         else:
             line_bot_api.push_message(
-                userID, TextSendMessage(text="Out of board range!"))
+                self.userID, TextSendMessage(text="Out of board range!"))
         return False
 
     def is_going_to_P1turn(self, event):
         text = event.message.text
         slist = text.split(' ')
-        userID = event.source.user_id
         try:
             x = int(slist[0])
             y = int(slist[1])
         except:
             return False
         if (0 <= x and x <= 5 and 0 <= y and y <= 5):
-            if place(x, y, 2):
+            if place(self.grid, x, y, 2):
                 send_text_message(
                     event.reply_token, "Player 2 place at : (" + str(x) + ", " + str(y) + ")")
                 return True
             else:
                 line_bot_api.push_message(
-                    userID, TextSendMessage(text="Can not place here!"))
+                    self.userID, TextSendMessage(text="Can not place here!"))
         else:
             line_bot_api.push_message(
-                userID, TextSendMessage(text="Out of board range!"))
+                self.userID, TextSendMessage(text="Out of board range!"))
         return False
 
     def is_going_to_CPUturn(self, event):
         text = event.message.text
         slist = text.split(' ')
-        userID = event.source.user_id
         try:
             x = int(slist[0])
             y = int(slist[1])
         except:
             return False
         if (0 <= x and x <= 5 and 0 <= y and y <= 5):
-            if place(x, y, 1):
+            if place(self.grid, x, y, 1):
                 send_text_message(
                     event.reply_token, "You place at : (" + str(x) + ", " + str(y) + ")")
                 return True
             else:
                 line_bot_api.push_message(
-                    userID, TextSendMessage(text="Can not place here!"))
+                    self.userID, TextSendMessage(text="Can not place here!"))
         else:
             line_bot_api.push_message(
-                userID, TextSendMessage(text="Out of board range!"))
+                self.userID, TextSendMessage(text="Out of board range!"))
         return False
 
     def on_enter_P1_play_C(self, event):
-        status = judge_endgame()
-        userID = event.source.user_id
+        status = judge_endgame(self.grid)
         if(status == None):
-            self.Result_count = Grid_Image(self.Result_count)
+            self.Result_count = Grid_Image(
+                self.grid, self.Result_count, self.userID)
             line_bot_api.push_message(
-                userID, TextSendMessage(text="Your Turn."))
-            img_url = web_url + "/images/result" + \
+                self.userID, TextSendMessage(text="Your Turn."))
+            img_url = web_url + "/images/" + self.userID + "result" + \
                 str(self.Result_count) + ".png"
             image_message = ImageSendMessage(
                 original_content_url=img_url, preview_image_url=img_url)
-            line_bot_api.push_message(userID, image_message)
+            line_bot_api.push_message(self.userID, image_message)
             print(grid_str())
         elif(status):
             line_bot_api.push_message(
-                userID, TextSendMessage(text="CPU Win ! Game End"))
+                self.userID, TextSendMessage(text="CPU Win ! Game End"))
             self.go_back(event)
         else:
             line_bot_api.push_message(
-                userID, TextSendMessage(text="You Win ! Game End"))
+                self.userID, TextSendMessage(text="You Win ! Game End"))
             self.go_back(event)
 
     def on_enter_P2_play(self, event):
-        status = judge_endgame()
-        userID = event.source.user_id
+        status = judge_endgame(self.grid)
         if(status == None):
-            self.Result_count = Grid_Image(self.Result_count)
-            line_bot_api.push_message(userID, TextSendMessage(text="P2 Turn."))
-            img_url = web_url + "/images/result" + \
+            self.Result_count = Grid_Image(
+                self.grid, self.Result_count, self.userID)
+            line_bot_api.push_message(
+                self.userID, TextSendMessage(text="P2 Turn."))
+            img_url = web_url + "/images/" + self.userID + "result" + \
                 str(self.Result_count) + ".png"
             image_message = ImageSendMessage(
                 original_content_url=img_url, preview_image_url=img_url)
-            line_bot_api.push_message(userID, image_message)
+            line_bot_api.push_message(self.userID, image_message)
             print(grid_str())
         elif(status):
             line_bot_api.push_message(
-                userID, TextSendMessage(text="Player 2 Win ! Game End"))
+                self.userID, TextSendMessage(text="Player 2 Win ! Game End"))
             self.go_back(event)
         else:
             line_bot_api.push_message(
-                userID, TextSendMessage(text="Player 1 Win ! Game End"))
+                self.userID, TextSendMessage(text="Player 1 Win ! Game End"))
             self.go_back(event)
 
     def on_enter_P1_play(self, event):
-        userID = event.source.user_id
-        status = judge_endgame()
+        status = judge_endgame(self.grid)
         if(status == None):
-            self.Result_count = Grid_Image(self.Result_count)
+            self.Result_count = Grid_Image(
+                self.grid, self.Result_count, self.userID)
             line_bot_api.push_message(
-                userID, TextSendMessage(text="P1 Turn."))
-            img_url = web_url + "/images/result" + \
+                self.userID, TextSendMessage(text="P1 Turn."))
+            img_url = web_url + "/images/" + self.userID + "result" + \
                 str(self.Result_count) + ".png"
             image_message = ImageSendMessage(
                 original_content_url=img_url, preview_image_url=img_url)
-            line_bot_api.push_message(userID, image_message)
+            line_bot_api.push_message(self.userID, image_message)
             print(grid_str())
         elif(status):
             line_bot_api.push_message(
-                userID, TextSendMessage(text="Player 2 Win ! Game End"))
+                self.userID, TextSendMessage(text="Player 2 Win ! Game End"))
             self.go_back(event)
         else:
             line_bot_api.push_message(
@@ -429,10 +434,9 @@ class TocMachine(Machine):
             self.go_back(event)
 
     def on_enter_CPU_play(self, event):
-        status = judge_endgame()
-        userID = event.source.user_id
+        status = judge_endgame(self.grid)
         if(status == None):
-            x, y = CPU_decision()
-            line_bot_api.push_message(userID, TextSendMessage(
+            x, y = CPU_decision(self.grid)
+            line_bot_api.push_message(self.userID, TextSendMessage(
                 text="CPU Turn. CPU place at : (" + str(x) + ", " + str(y) + ")"))
         self.go_back(event)

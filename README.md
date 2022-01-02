@@ -49,3 +49,4 @@ In `CPU_play`, if game end(any player win), go to `P1_play`.
 
 ## Specail Bonus
 - Can Generate Image to show the chess.
+- Deploy on Heroku

@@ -17,35 +17,69 @@ from utils import send_text_message
 
 load_dotenv()
 
+user_list = []
 
-machine = TocMachine(
-    states=["menu", "Rule", "P1_play", "P2_play",
-            "P1_play_C", "CPU_play"],
-    transitions=[
-        {"trigger": "advance", "source": "menu",
-            "dest": "Rule", "conditions": "is_going_to_Rule"},  # Rule
-        {"trigger": "advance", "source": "menu",
-            "dest": "P1_play", "conditions": "is_going_to_2P"},  # 2 Player
-        {"trigger": "advance", "source": "menu",
-            "dest": "P1_play_C", "conditions": "is_going_to_CPU"},  # 1 Player
-        {"trigger": "advance", "source": "P1_play",
-            "dest": "P2_play", "conditions": "is_going_to_P2turn"},  # 1P to 2P
-        {"trigger": "advance", "source": "P2_play",
-            "dest": "P1_play", "conditions": "is_going_to_P1turn"},  # 2P to 1P
-        {"trigger": "advance", "source": "P1_play_C",
-            "dest": "CPU_play", "conditions": "is_going_to_CPUturn"},  # 1P to CPU
-        {"trigger": "go_back", "source": "CPU_play",
-            "dest": "P1_play_C"},  # CPU to 1P
-        {"trigger": "advance", "source": [
-            "P1_play", "P2_play", "P1_play_C", "Rule"], "dest": "menu", "conditions": "is_going_to_menu"},  # Go Back Menu
-        {"trigger": "go_back", "source": [
-            "P1_play", "P2_play", "P1_play_C", "Rule"], "dest": "menu"},  # Game End and Go Back Menu
-        {"trigger": "go_back", "source": "Rule", "dest": "menu"},  # Go Back Menu
-    ],
-    initial="menu",
-    auto_transitions=False,
-    # show_conditions=True
-)
+# machine = TocMachine(
+#     states=["menu", "Rule", "P1_play", "P2_play",
+#             "P1_play_C", "CPU_play"],
+#     transitions=[
+#         {"trigger": "advance", "source": "menu",
+#             "dest": "Rule", "conditions": "is_going_to_Rule"},  # Rule
+#         {"trigger": "advance", "source": "menu",
+#             "dest": "P1_play", "conditions": "is_going_to_2P"},  # 2 Player
+#         {"trigger": "advance", "source": "menu",
+#             "dest": "P1_play_C", "conditions": "is_going_to_CPU"},  # 1 Player
+#         {"trigger": "advance", "source": "P1_play",
+#             "dest": "P2_play", "conditions": "is_going_to_P2turn"},  # 1P to 2P
+#         {"trigger": "advance", "source": "P2_play",
+#             "dest": "P1_play", "conditions": "is_going_to_P1turn"},  # 2P to 1P
+#         {"trigger": "advance", "source": "P1_play_C",
+#             "dest": "CPU_play", "conditions": "is_going_to_CPUturn"},  # 1P to CPU
+#         {"trigger": "go_back", "source": "CPU_play",
+#             "dest": "P1_play_C"},  # CPU to 1P
+#         {"trigger": "advance", "source": [
+#             "P1_play", "P2_play", "P1_play_C", "Rule"], "dest": "menu", "conditions": "is_going_to_menu"},  # Go Back Menu
+#         {"trigger": "go_back", "source": [
+#             "P1_play", "P2_play", "P1_play_C", "Rule"], "dest": "menu"},  # Game End and Go Back Menu
+#         {"trigger": "go_back", "source": "Rule", "dest": "menu"},  # Go Back Menu
+#     ],
+#     initial="menu",
+#     auto_transitions=False,
+# )
+
+
+def new_Machine(userid):
+    return TocMachine(
+        userid=userid,
+        states=["menu", "Rule", "P1_play", "P2_play",
+                "P1_play_C", "CPU_play"],
+        transitions=[
+            {"trigger": "advance", "source": "menu",
+             "dest": "Rule", "conditions": "is_going_to_Rule"},  # Rule
+            {"trigger": "advance", "source": "menu",
+             "dest": "P1_play", "conditions": "is_going_to_2P"},  # 2 Player
+            {"trigger": "advance", "source": "menu",
+             "dest": "P1_play_C", "conditions": "is_going_to_CPU"},  # 1 Player
+            {"trigger": "advance", "source": "P1_play",
+             "dest": "P2_play", "conditions": "is_going_to_P2turn"},  # 1P to 2P
+            {"trigger": "advance", "source": "P2_play",
+             "dest": "P1_play", "conditions": "is_going_to_P1turn"},  # 2P to 1P
+            {"trigger": "advance", "source": "P1_play_C",
+             "dest": "CPU_play", "conditions": "is_going_to_CPUturn"},  # 1P to CPU
+            {"trigger": "go_back", "source": "CPU_play",
+             "dest": "P1_play_C"},  # CPU to 1P
+            {"trigger": "advance", "source": [
+                "P1_play", "P2_play", "P1_play_C", "Rule"], "dest": "menu", "conditions": "is_going_to_menu"},  # Go Back Menu
+            {"trigger": "go_back", "source": [
+                "P1_play", "P2_play", "P1_play_C", "Rule"], "dest": "menu"},  # Game End and Go Back Menu
+            {"trigger": "go_back", "source": "Rule",
+                "dest": "menu"},  # Go Back Menu
+        ],
+        initial="menu",
+        auto_transitions=False,
+        # show_conditions=True
+    )
+
 
 app = Flask(__name__, static_url_path="/images", static_folder="./images/")
 
@@ -78,7 +112,15 @@ def webhook_handler():
         events = parser.parse(body, signature)
     except InvalidSignatureError:
         abort(400)
-
+    pos = -1
+    for i in range(len(user_list)):
+        if user_list[i]['userID'] == events[0].source.user_id:
+            pos = i
+            break
+    if pos == -1:
+        pos = len(user_list)
+        user_list.append(
+            {"userID": events[0].source.user_id, "machine": new_Machine(events[0].source.user_id)})
     # if event is MessageEvent and message is TextMessage, then echo text
     for event in events:
         if not isinstance(event, MessageEvent):
@@ -87,9 +129,9 @@ def webhook_handler():
             continue
         if not isinstance(event.message.text, str):
             continue
-        print(f"\nFSM STATE: {machine.state}")
+        print(f"\nFSM STATE: {user_list[pos]['machine'].state}")
         print(f"REQUEST BODY: \n{body}")
-        response = machine.advance(event)
+        response = user_list[pos]['machine'].advance(event)
         if response == False:
             send_text_message(event.reply_token, "Invalid Command.")
 
